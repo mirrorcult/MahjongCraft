@@ -7,7 +7,7 @@ import net.fabricmc.api.Environment
 import net.minecraft.client.gui.DrawContext
 
 class WColorBlock(
-    private val color: Int,
+    private val color: Int
 ) : WWidget() {
 
     override fun canResize(): Boolean = true

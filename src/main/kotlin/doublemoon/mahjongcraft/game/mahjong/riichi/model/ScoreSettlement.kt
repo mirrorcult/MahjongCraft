@@ -1,5 +1,6 @@
 package doublemoon.mahjongcraft.game.mahjong.riichi.model
 
+import doublemoon.mahjongcraft.MOD_ID
 import doublemoon.mahjongcraft.game.mahjong.riichi.player.MahjongBot
 import doublemoon.mahjongcraft.game.mahjong.riichi.player.MahjongPlayerBase
 import kotlinx.serialization.Serializable
@@ -8,21 +9,23 @@ import net.minecraft.text.Text
 /**
  * 結算遊戲分數用, 會發給客戶端, 用來顯示結算分數畫面,
  * 並不會顯示和處理玩家的手牌, 單純顯示 結算的原因 以及 分數的加減 和 排行,
+ * 原因包括: 流局, 榮和, 自摸, 遊戲結束 共 4 種情況
  *
- * 分數結算畫面總共有 8 種情況：流局(5種)、胡、自摸、遊戲結束
+ * @param titleTranslateKey 這個結算的標題的 TranslateText 的 key
  * */
 @Serializable
-data class ScoreSettlement(
+sealed class ScoreSettlement(
     val titleTranslateKey: String,
-    val scoreList: List<ScoreItem>
+    private val scoreListInput: List<ScoreItem>
 ) {
+
     /**
-     * 根據傳入的 [scoreList] 進行排序後顯示分數排行用的 [RankedScoreItem] 列表,
+     * 根據傳入的 [scoreListInput] 進行排序後顯示分數排行用的 [RankedScoreItem] 列表,
      * 照得分後總分排名由高至低排列,
      * */
     val rankedScoreList: List<RankedScoreItem> = buildList {
-        val origin = scoreList.sortedWith(originalScoreComparator).reversed() //用原始分數排列後倒過來 (即用原始分數降序排列)
-        val after = scoreList.sortedWith(totalScoreComparator).reversed() //用總分降序排列後倒過來 (即用總分降序排列)
+        val origin = scoreListInput.sortedWith(originalScoreComparator).reversed() //用原始分數排列後倒過來 (即用原始分數降序排列)
+        val after = scoreListInput.sortedWith(totalScoreComparator).reversed() //用總分降序排列後倒過來 (即用總分降序排列)
         after.forEachIndexed { index, playerScore ->
             val rankOrigin = origin.indexOf(playerScore)    //玩家原本的排名
             val rankFloat = if (index < rankOrigin) "↑" else if (index > rankOrigin) "↓" else ""
@@ -41,6 +44,27 @@ data class ScoreSettlement(
             )
         }
     }
+
+    @Serializable
+    data class ExhaustiveDraw(
+        val exhaustiveDraw: doublemoon.mahjongcraft.game.mahjong.riichi.model.ExhaustiveDraw,
+        val scoreList: List<ScoreItem>,
+    ) : ScoreSettlement(titleTranslateKey = exhaustiveDraw.translateKey, scoreListInput = scoreList)
+
+    @Serializable
+    data class Ron(
+        val scoreList: List<ScoreItem>,
+    ) : ScoreSettlement(titleTranslateKey = MahjongGameBehavior.RON.translateKey, scoreListInput = scoreList)
+
+    @Serializable
+    data class Tsumo(
+        val scoreList: List<ScoreItem>,
+    ) : ScoreSettlement(titleTranslateKey = MahjongGameBehavior.TSUMO.translateKey, scoreListInput = scoreList)
+
+    @Serializable
+    data class GameOver(
+        val scoreList: List<ScoreItem>
+    ) : ScoreSettlement(titleTranslateKey = "$MOD_ID.game.game_over", scoreListInput = scoreList)
 
     companion object {
         private val originalScoreComparator = Comparator<ScoreItem> { o1, o2 ->

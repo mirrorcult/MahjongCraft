@@ -22,7 +22,7 @@
     }
   },
   "result": {
-    "id": "mahjongcraft:mahjong_table",
+    "item": "mahjongcraft:mahjong_table",
     "count": 1
   }
 }

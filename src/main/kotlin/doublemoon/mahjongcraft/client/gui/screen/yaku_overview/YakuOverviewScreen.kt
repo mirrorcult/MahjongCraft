@@ -35,7 +35,7 @@ class YakuOverviewGui : LightweightGuiDescription() {
     init {
         rootPlainPanel(width = ROOT_WIDTH, height = ROOT_HEIGHT) {
             // Tabs
-            val tabs = OverviewTab.entries.toTypedArray()
+            val tabs = OverviewTab.values()
             val tabsPanel = scrollPanel(
                 x = BORDER_MARGIN,
                 y = BORDER_MARGIN,

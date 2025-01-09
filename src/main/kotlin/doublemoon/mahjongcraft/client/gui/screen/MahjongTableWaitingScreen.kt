@@ -6,8 +6,7 @@ import doublemoon.mahjongcraft.client.gui.widget.*
 import doublemoon.mahjongcraft.game.mahjong.riichi.model.MahjongRule
 import doublemoon.mahjongcraft.game.mahjong.riichi.model.MahjongTableBehavior
 import doublemoon.mahjongcraft.game.mahjong.riichi.model.MahjongTile
-import doublemoon.mahjongcraft.network.mahjong_table.MahjongTablePayload
-import doublemoon.mahjongcraft.network.sendPayloadToServer
+import doublemoon.mahjongcraft.network.MahjongTablePacketListener.sendMahjongTablePacket
 import doublemoon.mahjongcraft.registry.ItemRegistry
 import doublemoon.mahjongcraft.util.plus
 import io.github.cottonmc.cotton.gui.client.CottonClientScreen
@@ -27,7 +26,7 @@ import java.util.*
 
 @Environment(EnvType.CLIENT)
 class MahjongTableWaitingScreen(
-    mahjongTable: MahjongTableBlockEntity,
+    mahjongTable: MahjongTableBlockEntity
 ) : CottonClientScreen(MahjongTableGui(mahjongTable)) {
     /**
      * 不取消暫停的話, 通過按按鈕導致的更新會卡在下個 tick, 畫面會更新不了
@@ -45,7 +44,7 @@ class MahjongTableWaitingScreen(
 
 @Environment(EnvType.CLIENT)
 class MahjongTableGui(
-    val mahjongTable: MahjongTableBlockEntity,
+    val mahjongTable: MahjongTableBlockEntity
 ) : LightweightGuiDescription() {
 
     private val client = MinecraftClient.getInstance()
@@ -108,18 +107,14 @@ class MahjongTableGui(
                 width = BUTTON_WIDTH,
                 onClick = {
                     if (!isInThisGame) {  //不在這個遊戲表示要加入遊戲
-                        sendPayloadToServer(
-                            payload = MahjongTablePayload(
-                                behavior = MahjongTableBehavior.JOIN,
-                                pos = mahjongTable.pos
-                            )
+                        player.sendMahjongTablePacket(
+                            behavior = MahjongTableBehavior.JOIN,
+                            pos = mahjongTable.pos
                         )
                     } else {  //在遊戲中按表示要離開遊戲
-                        sendPayloadToServer(
-                            payload = MahjongTablePayload(
-                                behavior = MahjongTableBehavior.LEAVE,
-                                pos = mahjongTable.pos
-                            )
+                        player.sendMahjongTablePacket(
+                            behavior = MahjongTableBehavior.LEAVE,
+                            pos = mahjongTable.pos
                         )
                     }
                 }
@@ -226,11 +221,9 @@ class MahjongTableGui(
                     isEnabled = isAllReady
                     onClick = Runnable {
                         if (isAllReady && isHost) {
-                            sendPayloadToServer(
-                                payload = MahjongTablePayload(
-                                    behavior = MahjongTableBehavior.START,
-                                    pos = mahjongTable.pos
-                                )
+                            player.sendMahjongTablePacket(
+                                behavior = MahjongTableBehavior.START,
+                                pos = mahjongTable.pos
                             )
                         }
                     }
@@ -249,11 +242,9 @@ class MahjongTableGui(
                     isEnabled = !isFull
                     onClick = Runnable {
                         if (!isFull && isHost) {
-                            sendPayloadToServer(
-                                payload = MahjongTablePayload(
-                                    behavior = MahjongTableBehavior.ADD_BOT,
-                                    pos = mahjongTable.pos
-                                )
+                            player.sendMahjongTablePacket(
+                                behavior = MahjongTableBehavior.ADD_BOT,
+                                pos = mahjongTable.pos
                             )
                         }
                     }
@@ -271,11 +262,9 @@ class MahjongTableGui(
                 editRules!!.apply {
                     onClick = Runnable {
                         if (isHost) {
-                            sendPayloadToServer(
-                                payload = MahjongTablePayload(
-                                    behavior = MahjongTableBehavior.OPEN_RULES_EDITOR_GUI,
-                                    pos = mahjongTable.pos
-                                )
+                            player.sendMahjongTablePacket(
+                                behavior = MahjongTableBehavior.OPEN_RULES_EDITOR_GUI,
+                                pos = mahjongTable.pos
                             )
                         }
                     }
@@ -298,12 +287,10 @@ class MahjongTableGui(
                         isEnabled = playerAmount > playerIndex
                         onClick = Runnable {
                             if (isHost) {
-                                sendPayloadToServer(
-                                    payload = MahjongTablePayload(
-                                        behavior = MahjongTableBehavior.KICK,
-                                        pos = mahjongTable.pos,
-                                        extraData = playerIndex.toString()
-                                    )
+                                player.sendMahjongTablePacket(
+                                    behavior = MahjongTableBehavior.KICK,
+                                    pos = mahjongTable.pos,
+                                    extraData = playerIndex.toString()
                                 )
                             }
                         }
@@ -330,18 +317,14 @@ class MahjongTableGui(
                     }
                     onClick = Runnable {
                         if (isReady) {
-                            sendPayloadToServer(
-                                payload = MahjongTablePayload(
-                                    behavior = MahjongTableBehavior.NOT_READY,
-                                    pos = mahjongTable.pos
-                                )
+                            player.sendMahjongTablePacket(
+                                behavior = MahjongTableBehavior.NOT_READY,
+                                pos = mahjongTable.pos
                             )
                         } else {
-                            sendPayloadToServer(
-                                payload = MahjongTablePayload(
-                                    behavior = MahjongTableBehavior.READY,
-                                    pos = mahjongTable.pos
-                                )
+                            player.sendMahjongTablePacket(
+                                behavior = MahjongTableBehavior.READY,
+                                pos = mahjongTable.pos
                             )
                         }
                     }
@@ -393,7 +376,7 @@ class MahjongTableGui(
         /**
          * 對象的實體名稱, 不是 displayName, 是 gameProfile.name,
          * 請不要使用 [ServerPlayerEntity.getDisplayName],
-         * 麻煩使用 [ServerPlayerEntity.getName], empty 表示空位
+         * 麻煩使用 [ServerPlayerEntity.getName] 或 [ServerPlayerEntity.getEntityName], empty 表示空位
          */
         var entityName: String = ""
         var stringUUID: String = ""
@@ -497,7 +480,7 @@ class MahjongTableGui(
                 height: Int,
                 isBot: Boolean,
                 uuid: UUID?,
-                name: String?,
+                name: String?
             ): WWidget = when {
                 isBot -> botFace(x, y, width, height)
                 uuid != null && name != null -> playerFace(x, y, width, height, uuid, name)

@@ -10,15 +10,13 @@ import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.block.entity.SkullBlockEntity
 import net.minecraft.client.gui.DrawContext
+import net.minecraft.client.util.math.MatrixStack
 import java.util.*
-import kotlin.jvm.optionals.getOrNull
 
 class PlayerFaceIcon(
     val uuid: UUID,
-    val name: String,
+    val name: String
 ) : Icon {
-    private val coroutineScope = CoroutineScope(Dispatchers.Default)
-
     private var gameProfile = GameProfile(uuid, name)
 
     init {
@@ -26,10 +24,8 @@ class PlayerFaceIcon(
     }
 
     private fun loadGameProfileProperties() {
-        coroutineScope.launch(Dispatchers.IO) {
-            val profile = SkullBlockEntity.fetchProfileByUuid(uuid).get().getOrNull()
-                ?: SkullBlockEntity.fetchProfileByName(name).get().getOrNull()
-            if (profile != null) gameProfile = profile
+        CoroutineScope(Dispatchers.IO).launch {
+            SkullBlockEntity.loadProperties(gameProfile) { gameProfile = it }
         }
     }
 

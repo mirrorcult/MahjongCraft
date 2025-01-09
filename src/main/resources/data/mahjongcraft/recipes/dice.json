@@ -12,7 +12,7 @@
     }
   ],
   "result": {
-    "id": "mahjongcraft:dice",
+    "item": "mahjongcraft:dice",
     "count": 2
   }
 }

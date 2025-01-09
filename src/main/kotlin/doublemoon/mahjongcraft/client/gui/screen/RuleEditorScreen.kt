@@ -5,8 +5,7 @@ import doublemoon.mahjongcraft.blockentity.MahjongTableBlockEntity
 import doublemoon.mahjongcraft.client.gui.widget.*
 import doublemoon.mahjongcraft.game.mahjong.riichi.model.MahjongRule
 import doublemoon.mahjongcraft.game.mahjong.riichi.model.MahjongTableBehavior
-import doublemoon.mahjongcraft.network.mahjong_table.MahjongTablePayload
-import doublemoon.mahjongcraft.network.sendPayloadToServer
+import doublemoon.mahjongcraft.network.MahjongTablePacketListener.sendMahjongTablePacket
 import doublemoon.mahjongcraft.util.TextFormatting
 import io.github.cottonmc.cotton.gui.client.CottonClientScreen
 import io.github.cottonmc.cotton.gui.client.LightweightGuiDescription
@@ -17,13 +16,14 @@ import io.github.cottonmc.cotton.gui.widget.data.VerticalAlignment
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.client.MinecraftClient
+import net.minecraft.client.network.ClientPlayerEntity
 import net.minecraft.text.MutableText
 import net.minecraft.text.Text
 import net.minecraft.util.Formatting
 
 @Environment(EnvType.CLIENT)
 class RuleEditorScreen(
-    mahjongTable: MahjongTableBlockEntity,
+    mahjongTable: MahjongTableBlockEntity
 ) : CottonClientScreen(RuleEditorGui(mahjongTable)) {
     override fun shouldPause(): Boolean = false
     override fun tick() {
@@ -34,10 +34,11 @@ class RuleEditorScreen(
 
 @Environment(EnvType.CLIENT)
 class RuleEditorGui(
-    private val mahjongTable: MahjongTableBlockEntity,
+    private val mahjongTable: MahjongTableBlockEntity
 ) : LightweightGuiDescription() {
 
     private val client = MinecraftClient.getInstance()
+    private val player: ClientPlayerEntity = client.player!!
 
     //編輯中的設定
     private val editingRule: MahjongRule = mahjongTable.rule.copy()
@@ -47,7 +48,7 @@ class RuleEditorGui(
         label = { it.toText() },
         tooltip = { length -> getTooltip(length) }
     ) {
-        val values = MahjongRule.GameLength.entries.toTypedArray()
+        val values = MahjongRule.GameLength.values()
         val nextValue = values[(editingRule.length.ordinal + 1) % values.size]
         editingRule.length = nextValue
     }
@@ -57,7 +58,7 @@ class RuleEditorGui(
         label = { it.toText() },
         tooltip = { thinkingTime -> getTooltip(thinkingTime) }
     ) {
-        val values = MahjongRule.ThinkingTime.entries.toTypedArray()
+        val values = MahjongRule.ThinkingTime.values()
         val nextValue = values[(editingRule.thinkingTime.ordinal + 1) % values.size]
         editingRule.thinkingTime = nextValue
     }
@@ -83,7 +84,7 @@ class RuleEditorGui(
         label = { it.toText() },
         tooltip = { minimumHan -> getTooltip(minimumHan) }
     ) {
-        val values = MahjongRule.MinimumHan.entries.toTypedArray()
+        val values = MahjongRule.MinimumHan.values()
         val nextValue = values[(editingRule.minimumHan.ordinal + 1) % values.size]
         editingRule.minimumHan = nextValue
     }
@@ -98,7 +99,7 @@ class RuleEditorGui(
         label = { it.toText() },
         tooltip = { redFive -> getTooltip(redFive) }
     ) {
-        val values = MahjongRule.RedFive.entries.toTypedArray()
+        val values = MahjongRule.RedFive.values()
         val nextValue = values[(editingRule.redFive.ordinal + 1) % values.size]
         editingRule.redFive = nextValue
     }
@@ -221,12 +222,10 @@ class RuleEditorGui(
     private fun apply() {
         editingRule.startingPoints = startingPointsItem.value!!
         editingRule.minPointsToWin = minPointsToWinItem.value!!
-        sendPayloadToServer(
-            payload = MahjongTablePayload(
-                behavior = MahjongTableBehavior.CHANGE_RULE,
-                pos = mahjongTable.pos,
-                extraData = editingRule.toJsonString()
-            )
+        player.sendMahjongTablePacket(
+            behavior = MahjongTableBehavior.CHANGE_RULE,
+            pos = mahjongTable.pos,
+            extraData = editingRule.toJsonString()
         )
     }
 
@@ -266,7 +265,7 @@ class RuleEditorGui(
 
 
     abstract class SettingItem(
-        name: Text,
+        name: Text
     ) : WPlainPanel() {
 
         init {
@@ -301,7 +300,7 @@ class RuleEditorGui(
         val value: () -> T,
         private val label: (T) -> Text,
         private val tooltip: (T) -> Array<Text>,
-        private val onSelect: RuleSelectItem<T>.() -> Unit,
+        private val onSelect: RuleSelectItem<T>.() -> Unit
     ) : SettingItem(name) {
         private val nowLabel: Text
             get() = label.invoke(value.invoke())
@@ -333,7 +332,7 @@ class RuleEditorGui(
     class RuleToggleItem(
         val name: Text,
         var enabled: Boolean,
-        private val onClick: (Boolean) -> Unit,
+        private val onClick: (Boolean) -> Unit
     ) : SettingItem(name) {
 
         init {

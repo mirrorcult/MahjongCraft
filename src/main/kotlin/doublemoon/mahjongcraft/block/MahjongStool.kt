@@ -8,6 +8,7 @@ import net.minecraft.block.ShapeContext
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.server.world.ServerWorld
 import net.minecraft.util.ActionResult
+import net.minecraft.util.Hand
 import net.minecraft.util.hit.BlockHitResult
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.shape.VoxelShape
@@ -22,9 +23,14 @@ class MahjongStool(settings: Settings) : Block(settings) {
         world: World,
         pos: BlockPos,
         player: PlayerEntity,
-        hit: BlockHitResult,
+        hand: Hand,
+        hit: BlockHitResult
     ): ActionResult =
-        if (!world.isClient && SeatEntity.canSpawnAt(world = world as ServerWorld, pos = pos)) {
+        if (hand === Hand.MAIN_HAND && !world.isClient && SeatEntity.canSpawnAt(
+                world = world as ServerWorld,
+                pos = pos
+            )
+        ) {
             SeatEntity.spawnAt(world = world, pos = pos, entity = player, sitOffsetY = 0.4)
             ActionResult.SUCCESS
         } else {
@@ -35,7 +41,7 @@ class MahjongStool(settings: Settings) : Block(settings) {
         state: BlockState?,
         world: BlockView?,
         pos: BlockPos?,
-        context: ShapeContext?,
+        context: ShapeContext?
     ): VoxelShape = SHAPE
 
     companion object {

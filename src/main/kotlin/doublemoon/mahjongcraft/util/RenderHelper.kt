@@ -1,6 +1,7 @@
 package doublemoon.mahjongcraft.util
 
 import com.mojang.authlib.GameProfile
+import com.mojang.authlib.minecraft.MinecraftProfileTexture
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.client.MinecraftClient
@@ -16,6 +17,7 @@ import net.minecraft.client.render.entity.LivingEntityRenderer
 import net.minecraft.client.render.entity.PlayerModelPart
 import net.minecraft.client.render.item.ItemRenderer
 import net.minecraft.client.render.model.json.ModelTransformationMode
+import net.minecraft.client.util.DefaultSkinHelper
 import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.item.ItemStack
 import net.minecraft.text.Text
@@ -117,10 +119,15 @@ object RenderHelper {
         val playerEntity = client.world?.getPlayerByUuid(gameProfile.id)
         val hatVisible = playerEntity != null && playerEntity.isPartVisible(PlayerModelPart.HAT)
         val upsideDown = playerEntity != null && LivingEntityRenderer.shouldFlipUpsideDown(playerEntity)
-
-        val skinTextures = client.skinProvider.getSkinTextures(gameProfile)
-        val texture = skinTextures.texture
-
+        val textures = client.skinProvider.getTextures(gameProfile)
+        val skinTexture = if (MinecraftProfileTexture.Type.SKIN in textures.keys) {
+            val texture = textures[MinecraftProfileTexture.Type.SKIN]
+            client.skinProvider.loadSkin(texture, MinecraftProfileTexture.Type.SKIN)
+        } else {
+            DefaultSkinHelper.getTexture(gameProfile.id)
+        }
+//        val skinTextures = client.skinProvider.getSkinTextures(gameProfile)
+        val texture = skinTexture
         PlayerSkinDrawer.draw(context, texture, x, y, size, hatVisible, upsideDown)
     }
 

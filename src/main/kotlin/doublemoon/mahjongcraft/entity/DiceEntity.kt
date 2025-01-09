@@ -103,9 +103,9 @@ class DiceEntity(
         )
     }
 
-    override fun initDataTracker(builder: DataTracker.Builder) {
-        super.initDataTracker(builder)
-        builder.add(POINT, DicePoint.random().name)
+    override fun initDataTracker() {
+        super.initDataTracker()
+        dataTracker.startTracking(POINT, DicePoint.random().name)
     }
 
     override fun readCustomDataFromNbt(nbt: NbtCompound) {
@@ -143,9 +143,9 @@ enum class DicePoint(
     SIX(-180f, 0f, 6);
 
     val next: DicePoint
-        get() = entries[(this.ordinal + 1) % entries.size]
+        get() = values()[(this.ordinal + 1) % values().size]
 
     companion object {
-        fun random(): DicePoint = entries[(0..entries.toTypedArray().lastIndex).random()]
+        fun random(): DicePoint = values()[(0..values().lastIndex).random()]
     }
 }
