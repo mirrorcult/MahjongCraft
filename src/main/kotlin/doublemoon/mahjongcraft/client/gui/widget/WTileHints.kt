@@ -19,7 +19,6 @@ import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.util.math.MatrixStack
 import net.minecraft.text.Text
 import net.minecraft.util.hit.EntityHitResult
 import net.minecraft.util.hit.HitResult
@@ -54,8 +53,13 @@ class WTileHints(
             target?.takeIf { it.entity is MahjongTileEntity && (it.entity as MahjongTileEntity).mahjongTile != MahjongTile.UNKNOWN }
         updateHints(hitResult)
         //下面是改寫 super.paint() 的部分
-        if (backgroundPainter != null && backgroundVisible) backgroundPainter.paintBackground(context, x, y, this)
-        children.forEach { it.paint(context, x + it.x, y + it.y, mouseX - it.x, mouseY - it.y) }
+        try {
+            if (backgroundPainter != null && backgroundVisible) backgroundPainter.paintBackground(context, x, y, this)
+            children.forEach { it.paint(context, x + it.x, y + it.y, mouseX - it.x, mouseY - it.y) }
+        } catch (e: IndexOutOfBoundsException) {
+            // 处理异常，例如打印日志或者其他错误处理机制
+            println("Caught IndexOutOfBoundsException during painting: ${e.message}")
+        }
     }
 
     private fun updateHints(hitResult: EntityHitResult?) {
